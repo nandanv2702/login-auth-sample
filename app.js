@@ -52,12 +52,8 @@ app.get('/', (req, res) => {
   res.render('home');
 });
 
-app.get('/login', (req, res) => {
-  res.render('login');
-});
-
 app.get('/secrets', (req, res) => {
-  if(req.isAuthenticated()){
+  if (req.isAuthenticated()) {
     res.render('secrets');
   } else {
     res.redirect('/login');
@@ -69,12 +65,14 @@ app.route('/register')
     res.render('register');
   })
   .post(function(req, res) {
-    User.register({username: req.body.username}, req.body.password, function(err, user){
-      if(err){
+    User.register({
+      username: req.body.username
+    }, req.body.password, function(err, user) {
+      if (err) {
         console.log('error during registration');
         res.redirect('/register');
       } else {
-        passport.authenticate('local')(req, res, function(){
+        passport.authenticate('local')(req, res, function() {
           res.redirect('secrets');
         });
       };
@@ -82,9 +80,31 @@ app.route('/register')
   });
 
 app.route('/login')
+  .get(function(req,res){
+    res.render('login');
+  })
   .post(function(req, res) {
-    // will use passport
+    const user = new User({
+      username: req.body.username,
+      password: req.body.password
+    });
+
+    req.login(user, function(err){
+      if(err){
+        console.log(`error during login: ${err}`);
+        res.redirect('/')
+      } else {
+        passport.authenticate('local')(req, res, function() {
+          res.redirect('secrets');
+        });
+      }
+    });
   });
+
+app.get('/logout', function(req,res){
+  req.logout();
+  res.redirect('/');
+})
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
