@@ -56,59 +56,34 @@ app.get('/login', (req, res) => {
   res.render('login');
 });
 
+app.get('/secrets', (req, res) => {
+  if(req.isAuthenticated()){
+    res.render('secrets');
+  } else {
+    res.redirect('/login');
+  };
+});
+
 app.route('/register')
   .get(function(req, res) {
     res.render('register');
   })
   .post(function(req, res) {
-    bcrypt.hash(req.body.password, saltRounds, (err, hash) => {
-      if (!err) {
-        const newUser = new User({
-          email: req.body.username,
-          password: hash
-        });
-
-        newUser.save(function(err) {
-          if (err) {
-            console.log(err)
-          };
-
-          res.render('secrets');
-        });
+    User.register({username: req.body.username}, req.body.password, function(err, user){
+      if(err){
+        console.log('error during registration');
+        res.redirect('/register');
       } else {
-        console.log(`there was an error: ${err}`);
-        res.render('home');
+        passport.authenticate('local')(req, res, function(){
+          res.redirect('secrets');
+        });
       };
     });
   });
 
 app.route('/login')
   .post(function(req, res) {
-    const username = req.body.username;
-    const pwd = req.body.password;
-
-    User.findOne({
-      email: username
-    }, function(err, foundUser) {
-      if (err) {
-        console.log(err);
-        res.render('home');
-      } else {
-        if (foundUser) {
-          bcrypt.compare(pwd, foundUser.password, function(err, result) {
-            if (result === true) {
-              res.render('secrets');
-            } else {
-              console.log("wrong password");
-              res.render('home');
-            };
-          });
-        } else {
-          console.log("we here");
-          res.render('home');
-        };
-      };
-    });
+    // will use passport
   });
 
 app.listen(port, () => {
